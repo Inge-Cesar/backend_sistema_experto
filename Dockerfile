@@ -12,3 +12,12 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 COPY . /app/
+
+# Recolectar archivos estáticos
+RUN python manage.py collectstatic --no-input
+
+# Exponer el puerto
+EXPOSE 8000
+
+# Comando para ejecutar migraciones y luego iniciar gunicorn
+CMD bash -c "python manage.py migrate && gunicorn core.wsgi:application --bind 0.0.0.0:8000"
