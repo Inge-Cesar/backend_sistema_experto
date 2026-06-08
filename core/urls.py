@@ -55,6 +55,27 @@ from django.conf import settings
 from django.urls import re_path
 from django.views.static import serve
 
-urlpatterns += [
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]
+
+def test_email_view(request):
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings
+        import traceback
+        
+        send_mail(
+            'Prueba desde Render',
+            'Este es un mensaje de prueba',
+            settings.DEFAULT_FROM_EMAIL,
+            ['hospital.experto@gmail.com'],
+            fail_silently=False,
+        )
+        return HttpResponse("Correo enviado exitosamente")
+    except Exception as e:
+        import traceback
+        return HttpResponse(f"Error al enviar correo: {traceback.format_exc()}")
+
+urlpatterns += [
+    path('test-email-render/', test_email_view),
 ]
