@@ -206,20 +206,18 @@ Contraseña temporal: {password}
 
 ¡Gracias por formar parte de nuestro equipo médico!
 '''
-                def enviar_correo_async():
-                    try:
-                        send_mail(
-                            asunto,
-                            mensaje,
-                            settings.DEFAULT_FROM_EMAIL,
-                            [correo],
-                            fail_silently=False,
-                        )
-                    except Exception as e:
-                        print(f"Error al enviar correo: {e}")
-
-                # Enviar de forma asíncrona para no bloquear la respuesta HTTP
-                threading.Thread(target=enviar_correo_async).start()
+                # Enviar de forma síncrona temporalmente para que cualquier error se muestre en pantalla
+                try:
+                    send_mail(
+                        asunto,
+                        mensaje,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [correo],
+                        fail_silently=False,
+                    )
+                except Exception as e:
+                    import traceback
+                    raise serializers.ValidationError({"correo": f"No se pudo enviar el correo a {correo}. Error SMTP: {str(e)}"})
 
             return personal
         except Exception as e:
