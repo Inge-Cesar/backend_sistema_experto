@@ -139,63 +139,63 @@ class PersonalSerializer(serializers.ModelSerializer):
         return ret
 
     def create(self, validated_data):
-        import random
-        cedula = validated_data.get('cedula')
-        # Obtener el password desde initial_data (ya que no está en Meta.fields)
-        password = self.initial_data.get('password')
-        if not password:
-            password = cedula # Fallback por si acaso
-
-        rol_medico, _ = Role.objects.get_or_create(name=Role.MEDICO)
-
-        correo_input = validated_data.get('correo')
-        email = correo_input if correo_input else f"{cedula}@hospital.bo"
-
-        # Buscar si ya existe un usuario con este correo (ej. si fue eliminado el personal pero no el usuario)
-        user = User.objects.filter(email=email).first()
-        
-        if user:
-            if hasattr(user, 'perfil_personal'):
-                raise serializers.ValidationError({"cedula": "Ya existe un médico registrado con este DNI o Correo electrónico."})
-            created = False
-            username = user.username
-        else:
-            # Generar Código de usuario numérico y único (Ej: MED-485930)
-            while True:
-                codigo_numerico = random.randint(100000, 999999)
-                username = f"MED-{codigo_numerico}"
-                if not User.objects.filter(username=username).exists():
-                    break
+        try:
+            import random
+            cedula = validated_data.get('cedula')
+            # Obtener el password desde initial_data (ya que no está en Meta.fields)
+            password = self.initial_data.get('password')
+            if not password:
+                password = cedula # Fallback por si acaso
             
-            user = User.objects.create(
-                username=username,
-                email=email,
-                role=rol_medico
-            )
-            created = True
+            rol_medico, _ = Role.objects.get_or_create(name=Role.MEDICO)
 
-        if password:
-            user.set_password(password)
-            user.save()
+            correo_input = validated_data.get('correo')
+            email = correo_input if correo_input else f"{cedula}@hospital.bo"
 
-        personal = Personal.objects.create(usuario=user, **validated_data)
-        
-        # Opcional: Podríamos retornar el username generado en la respuesta
-        # pero para no alterar la estructura, lo inyectamos al objeto
-        personal.codigo_generado = username
-
-        # Enviar correo de bienvenida si se registró un correo
-        correo = validated_data.get('correo')
-        if correo:
-            from django.core.mail import send_mail
-            from django.conf import settings
-            import threading
-
-            nombres = validated_data.get('nombres', '')
-            apellidos = validated_data.get('apellidos', '')
+            # Buscar si ya existe un usuario con este correo (ej. si fue eliminado el personal pero no el usuario)
+            user = User.objects.filter(email=email).first()
             
-            asunto = '🏥 Bienvenido al Sistema Experto del Hospital'
-            mensaje = f'''Hola Dr/Dra. {nombres} {apellidos},
+            if user:
+                if hasattr(user, 'perfil_personal'):
+                    raise serializers.ValidationError({"cedula": "Ya existe un médico registrado con este DNI o Correo electrónico."})
+                created = False
+                username = user.username
+            else:
+                # Generar username MED-XXXXXX
+                while True:
+                    codigo_numerico = random.randint(100000, 999999)
+                    username = f"MED-{codigo_numerico}"
+                    if not User.objects.filter(username=username).exists():
+                        break
+                
+                user = User.objects.create(
+                    username=username,
+                    email=email,
+                    role=rol_medico
+                )
+
+            if password:
+                user.set_password(password)
+                user.save()
+
+            personal = Personal.objects.create(usuario=user, **validated_data)
+            
+            # Opcional: Podríamos retornar el username generado en la respuesta
+            # pero para no alterar la estructura, lo inyectamos al objeto
+            personal.codigo_generado = username
+            
+            # Enviar correo de bienvenida si se registró un correo
+            correo = validated_data.get('correo')
+            if correo:
+                from django.core.mail import send_mail
+                from django.conf import settings
+                import threading
+
+                nombres = validated_data.get('nombres', '')
+                apellidos = validated_data.get('apellidos', '')
+                
+                asunto = '🏥 Bienvenido al Sistema Experto del Hospital'
+                mensaje = f'''Hola Dr/Dra. {nombres} {apellidos},
 
 Se ha creado tu perfil laboral exitosamente en nuestro Sistema Experto de Asignación.
 Para revisar tus horarios de guardia y llevar un control de tus ingresos, descarga nuestra App Móvil oficial.
@@ -204,27 +204,27 @@ Tus credenciales de acceso son:
 Usuario (Código Médico): {username}
 Contraseña temporal: {password}
 
-Por tu seguridad, te recomendamos no compartir este correo.
-
-Saludos cordiales,
-Administración del Hospital.
+¡Gracias por formar parte de nuestro equipo médico!
 '''
-            def enviar_correo_async():
-                try:
-                    send_mail(
-                        subject=asunto,
-                        message=mensaje,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[correo],
-                        fail_silently=True,
-                    )
-                except Exception as e:
-                    print(f"Error al enviar correo: {e}")
+                def enviar_correo_async():
+                    try:
+                        send_mail(
+                            asunto,
+                            mensaje,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [correo],
+                            fail_silently=False,
+                        )
+                    except Exception as e:
+                        print(f"Error al enviar correo: {e}")
 
-            # Enviar de forma asíncrona para no bloquear la respuesta HTTP
-            threading.Thread(target=enviar_correo_async).start()
+                # Enviar de forma asíncrona para no bloquear la respuesta HTTP
+                threading.Thread(target=enviar_correo_async).start()
 
-        return personal
+            return personal
+        except Exception as e:
+            import traceback
+            raise serializers.ValidationError({"error_500_details": traceback.format_exc()})
 
     def update(self, instance, validated_data):
         password = self.initial_data.get('password')
