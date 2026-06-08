@@ -19,6 +19,16 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 from modules.usuarios.views import CustomTokenObtainPairView
 from modules.auditoria.views import HoneypotView
+from django.http import HttpResponse
+
+def run_seed(request):
+    try:
+        import seed_rules
+        import seed_rules_2
+        seed_rules_2.seed_nuevas_reglas()
+        return HttpResponse("<h1>¡Reglas inyectadas exitosamente!</h1><p>Vuelve a tu panel y recarga la página.</p>")
+    except Exception as e:
+        return HttpResponse(f"<h1>Error:</h1><p>{e}</p>")
 
 urlpatterns = [
     # TRAMPA PARA HACKERS (HONEYPOT) - Si una IP toca esta ruta, será bloqueada de por vida
@@ -35,4 +45,7 @@ urlpatterns = [
     path('api/shifts/', include('modules.turnos.urls')),
     path('api/finance/', include('modules.turnos.finance_urls')),
     path('api/audit/', include('modules.auditoria.urls')),
+    
+    # RUTA TEMPORAL PARA SEMBRAR REGLAS
+    path('setup-rules/', run_seed),
 ]
