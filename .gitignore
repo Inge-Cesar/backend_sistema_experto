@@ -1,0 +1,29 @@
+# Ambientes virtuales
+venv/
+env/
+.venv/
+
+# Variables de entorno (¡MUY IMPORTANTE NO SUBIR ESTO!)
+.env
+
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Base de datos SQLite (si usaras una localmente)
+db.sqlite3
+
+# Archivos de SO
+.DS_Store
+Thumbs.db
+
+# Carpetas de IDE
+.vscode/
+.idea/
+
+# Fotos de personal locales (se subirán a S3 en prod)
+personnel_photos/
+
+# Archivos estáticos recolectados
+staticfiles/

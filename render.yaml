@@ -1,0 +1,25 @@
+databases:
+  - name: db_sistema_experto
+    plan: free # Usa el plan gratuito por defecto
+    databaseName: bd_sistema_experto
+    user: usuario_admin
+
+services:
+  - type: web
+    name: backend_sistema_experto
+    env: python
+    buildCommand: "bash build.sh"
+    startCommand: "gunicorn core.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: db_sistema_experto
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: PERSONAL_ENCRYPTION_KEY
+        generateValue: true
+      # Variables para MinIO / S3 que tendrás que rellenar manualmente en Render:
+      # MINIO_ROOT_USER, MINIO_ROOT_PASSWORD, MINIO_BUCKET_NAME, MINIO_ENDPOINT
