@@ -19,15 +19,6 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 from modules.usuarios.views import CustomTokenObtainPairView
 from modules.auditoria.views import HoneypotView
-from django.http import HttpResponse
-
-def run_populate(request):
-    try:
-        from populate_db import populate
-        populate()
-        return HttpResponse("<h1>¡Base de datos poblada exitosamente!</h1><p>Ya puedes iniciar sesión como admin.</p>")
-    except Exception as e:
-        return HttpResponse(f"<h1>Error:</h1><p>{e}</p>")
 
 urlpatterns = [
     # TRAMPA PARA HACKERS (HONEYPOT) - Si una IP toca esta ruta, será bloqueada de por vida
@@ -44,7 +35,4 @@ urlpatterns = [
     path('api/shifts/', include('modules.turnos.urls')),
     path('api/finance/', include('modules.turnos.finance_urls')),
     path('api/audit/', include('modules.auditoria.urls')),
-    
-    # RUTA TEMPORAL PARA POBLAR LA BASE DE DATOS EN PRODUCCIÓN
-    path('setup-db-render/', run_populate),
 ]
